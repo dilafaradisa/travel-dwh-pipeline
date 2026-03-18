@@ -1,6 +1,6 @@
 # Building ELT Pipeline for Pactravel Data Warehouse
 
-This project was created as part of the assignment from Pacmann.ai. In this project, I act as a data engineer responsible for building an ELT pipeline for a travel booking platform, PacTravel. In this scenario, PacTravel wants to build a Data Warehouse to support its growing analytical needs — specifically to track daily booking volumes and monitor average ticket prices over time. In this repository, I will focus on developing the ELT pipeline.
+This project was created as part of the assignment from Pacmann.ai. In this project, I act as a data engineer responsible for building an ELT pipeline for a travel booking platform, PacTravel. In this scenario, PacTravel wants to build a Data Warehouse to support its growing analytical needs, specifically to track daily booking volumes and monitor average ticket prices over time. In this repository, I will focus on developing the ELT pipeline.
 
 ---
 
@@ -44,20 +44,20 @@ The warehouse uses a **star schema** dimensional model with:
 **Dimension Tables**
 | Table | SCD Type | Description |
 |---|---|---|
-| `dim_date` | Static | Date dimension seeded via dbt |
-| `dim_customers` | Type 2 | Customer details |
-| `dim_hotels` | Type 2 | Hotel details |
-| `dim_airlines` | Type 1 | Airline details |
-| `dim_aircrafts` | Type 1 | Aircraft details |
-| `dim_airports` | Type 1 | Airport details |
+| dim_date | Static | Date dimension seeded via dbt |
+| dim_customers | Type 2 | Customer details |
+| dim_hotel | Type 2 | Hotel details |
+| dim_airlines | Type 1 | Airline details |
+| dim_aircrafts | Type 1 | Aircraft details |
+| dim_airports | Type 1 | Airport details |
 
 **Fact Tables**
 | Table | Type | Description |
 |---|---|---|
-| `fct_flight_booking` | Transaction Fact | One row per individual flight booking |
-| `fct_hotel_booking` | Transaction Fact | One row per individual hotel booking |
-| `fct_daily_flight_summary` | Periodic Snapshot | Daily aggregated flight booking metrics per airline |
-| `fct_daily_hotel_summary` | Periodic Snapshot | Daily aggregated hotel booking metrics per hotel |
+| fact_flight_bookings | Transaction Fact | One row per individual flight booking |
+| fact_hotel_bookings | Transaction Fact | One row per individual hotel booking |
+| fact_daily_flight_bookings | Periodic Snapshot | Daily aggregated flight booking metrics per airline |
+| fact_daily_hotel_bookings | Periodic Snapshot | Daily aggregated hotel booking metrics per hotel |
 
 ---
 
@@ -68,8 +68,7 @@ The warehouse uses a **star schema** dimensional model with:
 
   ```bash
   python -m venv venv
-  source venv/bin/activate  # Linux/macOS
-  venv\Scripts\activate     # Windows
+  source venv/bin/activate
   ```
 
 * **Install requirements** :
@@ -116,94 +115,63 @@ The warehouse uses a **star schema** dimensional model with:
 
 ### Create Schema for the Database
 
-Set up schemas, tables, and attributes according to the dimensional model design:
-
+Create schemas, tables, and attributes based on the dimensional model design:
 + [Source database schema](./helper/source_init/init.sql)
 + Target database:
-  - [Staging schema (pactravel)](./helper/dwh_init/dwh-staging-schema.sql)
-  - [Final schema (final)](./helper/dwh_init/dwh-final-schema.sql)
+[Staging schema (pactravel)](./helper/dwh_init/dwh-staging-schema.sql)
 
 ### Create Utility Functions
 
-Several utility functions support the orchestration process:
-
+Then i created some utility functions to support the orchestration, such as:
 + [Database connector](./pipeline/utils/db_connect.py) : Functions to connect to source and DWH databases.
 + [SQL file reader](./pipeline/utils/read_sql.py) : Function to read SQL query files and return as strings.
++ [Delete temporary data](./pipeline/utils/delete_temp_data.py) : Function to delete temporary data.
 
 ### Create ELT Tasks with Luigi
 
 **[ExtractData](./pipeline/extract.py)**
 
-The `ExtractData` task extracts all tables from the PacTravel source database (`aircrafts`, `airlines`, `airports`, `customers`, `hotel`, `flight_bookings`, `hotel_bookings`) and saves them temporarily as CSV files. The outputs of this task are CSV files for each table, a task summary with status and execution time (`extract_summary_<date>.csv`), and a log file.
+The ExtractData task extracts all tables from the PacTravel source database (aircrafts, airlines, airports, customers, hotel, flight_bookings, hotel_bookings) and saves them as temporary CSV files. The output of this task are CSV files for each table, a task summary with status and execution time, and a log file.
 
 **[LoadData](./pipeline/load.py)**
 
-The `LoadData` task loads the extracted CSV files into the DWH `pactravel` staging schema as-is. Before loading, all tables are truncated to ensure no duplicate data. The outputs of this task are a task summary (`load_summary_<date>.csv`) and a log file.
+The LoadData task loads the extracted CSV files into the DWH pactravel staging schema without modifications. Before loading, all tables are truncated to ensure no duplicate data. The outputs of this task are a task summary and a log file.
 
-**[Transform](./pipeline/transform.py)**
+**[TransformData](./pipeline/transform.py)**
 
-The `Transform` task runs dbt to transform data from the staging schema into the final dimensional model. It executes `dbt deps`, `dbt seed`, `dbt run`, `dbt snapshot`, and `dbt test` sequentially. The outputs of this task are a task summary (`transform_summary_<date>.csv`) and a log file.
+The TransformData task runs dbt to transform data from the staging schema into the final dimensional model. It executes dbt deps, dbt seed, dbt run, dbt snapshot, and dbt test sequentially. The outputs of this task are also a task summary and a log file.
 
 ### Compile Tasks
 
-All tasks are compiled into a single main script:
+All tasks are compiled into a main script:
 
 ```bash
 python elt_main.py
 ```
 
-Example output logs and task summaries:
+Example output logs:
 
 **Logs**
 
-![log file](./img/pactravel-logs.png)
-
-**Task Summary**
-
-![task summary](./img/pactravel-task-summary.png)
+![log file](./img/logs.jpeg)
 
 ---
 
-## 5. Scheduling with Cron
+## 5. Results
 
-The pipeline is scheduled to run daily at 2 AM:
+After running the full pipeline, this is the example query used on the fact_daily_hotel_bookings:
 
-```bash
-# crontab -e
-0 2 * * * cd <project_dir> && source venv/bin/activate && python elt_main.py >> logs/cron.log 2>&1
+**Sample Query — Daily Hotel Average Price**
+```sql
+select booking_date , dh.hotel_name , fdhb.avg_room_price 
+from pactravel_final.fact_daily_hotel_bookings fdhb
+join pactravel_final.dim_hotel dh  on dh.nk_hotel_id = fdhb.nk_hotel_id 
+order by 1;
 ```
+![query result](./img/query-result-daily-hotel-booking.jpeg)
 
 ---
 
-## 6. Results
+## 6. Conclusion
 
-After running the full pipeline, the following tables are available in the final schema:
-
-**Sample Query — Daily Booking Volume**
-```sql
-SELECT
-    dd.full_date,
-    fds.total_bookings,
-    fds.total_revenue
-FROM fct_daily_flight_summary fds
-JOIN dim_date dd ON fds.date_id = dd.date_id
-ORDER BY dd.full_date DESC
-LIMIT 30;
-```
-
-**Sample Query — Average Ticket Price Over Time**
-```sql
-SELECT
-    dd.year,
-    dd.month,
-    da.airline_name,
-    fds.avg_ticket_price,
-    LAG(fds.avg_ticket_price) OVER (
-        PARTITION BY fds.airline_id
-        ORDER BY dd.full_date
-    ) AS prev_avg_price
-FROM fct_daily_flight_summary fds
-JOIN dim_date dd ON fds.date_id = dd.date_id
-JOIN dim_airlines da ON fds.airline_id = da.airline_id
-ORDER BY da.airline_name, dd.year, dd.month;
-```
+This project was created as part of the assignment for Pacmann.ai. through this project, i learned hands on experience in designing a dimensional data warehouse, building ELT pipeline using Python, orcheration using Luigi, and transformation using dbt, and the most important is understanding the business problems into a solutions. For the full story, you can check my medium article. Feel free to connect on [Linkedin](https://www.linkedin.com/in/adila-zahra-faradisa/)
