@@ -1,0 +1,310 @@
+version: 2
+
+models:
+  - name: dim_aircrafts
+    description: "Dimension table created from the aircrafts table in the pactravel staging schema."
+    columns:
+      - name: sk_aircraft_id
+        description: "Surrogate Key for aircraft_id"
+        tests:
+          - not_null
+          - dbt_constraints.primary_key
+
+      - name: nk_aircraft_id
+        description: "Natural Key from aircrafts table (aircraft_id) in pactravel staging schema"
+        tests:
+          - not_null
+
+  - name: dim_airlines
+    description: "Dimension table created from the airlines table in the pactravel staging schema."
+    columns:
+      - name: sk_airline_id
+        description: "Surrogate Key for airline_id"
+        tests:
+          - not_null
+          - dbt_constraints.primary_key
+
+      - name: nk_airline_id
+        description: "Natural Key from airlines table (airline_id) in pactravel staging schema"
+        tests:
+          - not_null
+
+  - name: dim_airports
+    description: "Dimension table created from the airports table in the pactravel staging schema."
+    columns:
+      - name: sk_airport_id
+        description: "Surrogate Key for airport_id"
+        tests:
+          - not_null
+          - dbt_constraints.primary_key
+
+      - name: nk_airport_id
+        description: "Natural Key from airports table (airport_id) in pactravel staging schema"
+        tests:
+          - not_null
+
+  - name: dim_customers
+    description: "Dimension table created from the customers table in the pactravel staging schema."
+    columns:
+      - name: sk_customer_id
+        description: "Surrogate Key for customer_id"
+        tests:
+          - not_null
+          - dbt_constraints.primary_key
+
+      - name: nk_customer_id
+        description: "Natural Key from customer table (customer_id) in pactravel_staging schema"
+        tests:
+          - not_null
+
+  - name: dim_hotel
+    description: "Dimension table created from the hotel table in the pactravel staging schema"
+    columns:
+      - name: sk_hotel_id
+        description: "Surrogate Key for hotel_id"
+        tests:
+          - not_null
+          - dbt_constraints.primary_key
+
+      - name: nk_hotel_id
+        description: "Natural Key from hotel table (hotel_id) in pactravel_staging schema"
+        tests:
+          - not_null
+
+  - name: dim_date
+    description: "Dimension table for dates"
+    columns:
+      - name: date_id
+        description: "Primary Key for dim_date"
+        tests:
+          - not_null
+          - dbt_constraints.primary_key
+
+
+  - name: fact_flight_bookings
+    description: "Fact table capturing individual flight booking transactions"
+    columns:
+      - name: sk_flight_booking_id
+        description: "Surrogate Key for flight_booking_id"
+        tests:
+          - not_null
+          - dbt_constraints.primary_key
+
+      - name: trip_id
+        description: "Degenerate dimension key from flight_booking table (trip_id) in pactravel staging schema"
+        tests:
+          - not_null
+
+      - name: flight_number
+        description: "Degenerate dimension flight number from source"
+        tests:
+          - not_null
+
+      - name: seat_number
+        description: "Degenerate dimension seat number from source"
+        tests:
+          - not_null
+
+      - name: sk_customer_id
+        description: "Foreign key from dim_customers"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_customers')
+              pk_column_name: sk_customer_id
+      
+      - name: sk_airline_id
+        description: "Foreign key from dim_airlines"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_airlines')
+              pk_column_name: sk_airline_id
+
+      - name: sk_aircraft_id
+        description: "Foreign key from dim_aircrafts"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_aircrafts')
+              pk_column_name: sk_aircraft_id
+
+      - name: departure_airport
+        description: "Airport departure name"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_airports')
+              pk_column_name: airport_name
+
+      - name: arrival_airport
+        description: "Airport arrival name"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_airports')
+              pk_column_name: airport_name
+
+      - name: departure_date
+        description: "Foreign key from dim_date to get departure date"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_date')
+              pk_column_name: date_actual
+
+
+  - name: fact_hotel_bookings
+    description: "Fact table capturing individual hotel booking transactions"
+    columns:
+      - name: sk_hotel_booking_id
+        description: "Surrogate Key for hotel_booking_id"
+        tests:
+          - not_null
+          - dbt_constraints.primary_key
+
+      - name: trip_id
+        description: "Degenerate dimension from hotel_booking table (trip_id)"
+        tests:
+          - not_null
+
+      - name: sk_customer_id
+        description: "Foreign key from dim_customers"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_customers')
+              pk_column_name: sk_customer_id
+
+      - name: sk_hotel_id
+        description: "Foreign key from dim_hotel"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_hotel')
+              pk_column_name: sk_hotel_id
+
+      - name: checkin_date_id
+        description: "Foreign key from dim_date to get actual checkin date"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_date')
+              pk_column_name: date_actual
+
+      - name: checkout_date_id
+        description: "Foreign key from dim_date to get actual checkout date"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_date')
+              pk_column_name: date_actual
+
+      - name: room_price
+        description: "Price per night of the hotel room"
+        tests:
+          - not_null
+
+      - name: num_nights
+        description: "Number of nights stayed"
+        tests:
+          - not_null
+
+      - name: total_price
+        description: "Total price of the hotel booking (room_price x num_nights)"
+        tests:
+          - not_null
+
+      - name: breakfast_included
+        description: "Flag to indicate if breakfast is included in the booking"
+        tests:
+          - not_null
+
+
+
+  - name: fact_daily_flight_bookings
+    description: "Periodic snapshot fact table capturing daily flight booking summary per airline"
+    columns:
+      - name: booking_date
+        description: "Foreign key from dim_date to get the booking date"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_date')
+              pk_column_name: date_actual
+
+      - name: airline_id
+        description: "Foreign key from dim_airlines (nk_airline_id)"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_airlines')
+              pk_column_name: sk_airline_id
+
+      - name: total_bookings
+        description: "Total number of flight bookings on that day for that airline"
+        tests:
+          - not_null
+
+      - name: total_revenue
+        description: "Total revenue from flight bookings on that day for that airline"
+        tests:
+          - not_null
+
+      - name: avg_ticket_price
+        description: "Average ticket price on that day for that airline"
+        tests:
+          - not_null
+
+      - name: unique_customers
+        description: "Number of unique customers who made bookings on that day"
+        tests:
+          - not_null
+
+  - name: fact_daily_hotel_bookings
+    description: "Periodic snapshot fact table capturing daily hotel booking summary per hotel"
+    columns:
+      - name: booking_date
+        description: "Foreign key from dim_date — part of composite primary key"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_date')
+              pk_column_name: date_actual
+
+      - name: nk_hotel_id
+        description: "Foreign key from dim_hotel"
+        tests:
+          - not_null
+          - dbt_constraints.foreign_key:
+              pk_table_name: ref('dim_hotel')
+              pk_column_name: nk_hotel_id
+
+      - name: total_bookings
+        description: "Total number of hotel bookings on that day for that hotel"
+        tests:
+          - not_null
+
+      - name: avg_room_price
+        description: "Average room price on that day for that hotel"
+        tests:
+          - not_null
+
+      - name: total_revenue
+        description: "Total revenue from hotel bookings on that day for that hotel"
+        tests:
+          - not_null
+
+      - name: unique_customers
+        description: "Number of unique customers who made bookings on that day"
+        tests:
+          - not_null
+
+      - name: bookings_with_breakfast
+        description: "Number of bookings that include breakfast on that day for that hotel"
+        tests:
+          - not_null      
+
+
+    
+   

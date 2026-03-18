@@ -103,11 +103,11 @@ CREATE TABLE pactravel.flight_bookings (
 	seat_number varchar(32) NOT NULL,
 	price int4 NULL,
 	CONSTRAINT flight_bookings_pkey PRIMARY KEY (trip_id, flight_number, seat_number),
-	CONSTRAINT fk_flight_aircraft FOREIGN KEY (aircraft_id) REFERENCES aircrafts(aircraft_id),
-	CONSTRAINT fk_flight_airline FOREIGN KEY (airline_id) REFERENCES airlines(airline_id),
-	CONSTRAINT fk_flight_airport_dst FOREIGN KEY (airport_dst) REFERENCES airports(airport_id),
-	CONSTRAINT fk_flight_airport_src FOREIGN KEY (airport_src) REFERENCES airports(airport_id),
-	CONSTRAINT fk_flight_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+	CONSTRAINT fk_flight_aircraft FOREIGN KEY (aircraft_id) REFERENCES pactravel.aircrafts(aircraft_id),
+	CONSTRAINT fk_flight_airline FOREIGN KEY (airline_id) REFERENCES pactravel.airlines(airline_id),
+	CONSTRAINT fk_flight_airport_dst FOREIGN KEY (airport_dst) REFERENCES pactravel.airports(airport_id),
+	CONSTRAINT fk_flight_airport_src FOREIGN KEY (airport_src) REFERENCES pactravel.airports(airport_id),
+	CONSTRAINT fk_flight_customer FOREIGN KEY (customer_id) REFERENCES pactravel.customers(customer_id)
 );
 
 
@@ -126,6 +126,6 @@ CREATE TABLE pactravel.hotel_bookings (
 	price int4 NULL,
 	breakfast_included bool NULL,
 	CONSTRAINT hotel_bookings_pkey PRIMARY KEY (trip_id),
-	CONSTRAINT fk_hotel_booking_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
-	CONSTRAINT fk_hotel_booking_hotel FOREIGN KEY (hotel_id) REFERENCES hotel(hotel_id)
+	CONSTRAINT fk_hotel_booking_customer FOREIGN KEY (customer_id) REFERENCES pactravel.customers(customer_id),
+	CONSTRAINT fk_hotel_booking_hotel FOREIGN KEY (hotel_id) REFERENCES pactravel.hotel(hotel_id)
 );

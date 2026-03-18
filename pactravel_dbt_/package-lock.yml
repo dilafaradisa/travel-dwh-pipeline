@@ -1,0 +1,11 @@
+packages:
+  - name: dbt_utils
+    package: dbt-labs/dbt_utils
+    version: 1.1.1
+  - name: dbt_date
+    package: godatadriven/dbt_date
+    version: 0.10.1
+  - name: dbt_constraints
+    package: Snowflake-Labs/dbt_constraints
+    version: 0.6.3
+sha1_hash: 90121ecfdfe57783111200cabdad212ad7aadc2e
