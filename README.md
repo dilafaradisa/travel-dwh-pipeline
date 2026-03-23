@@ -56,8 +56,8 @@ The warehouse uses a **star schema** dimensional model with:
 |---|---|---|
 | fact_flight_bookings | Transaction Fact | One row per individual flight booking |
 | fact_hotel_bookings | Transaction Fact | One row per individual hotel booking |
-| fact_daily_flight_bookings | Periodic Snapshot | Daily aggregated flight booking metrics per airline |
-| fact_daily_hotel_bookings | Periodic Snapshot | Daily aggregated hotel booking metrics per hotel |
+| fact_daily_flight_bookings | Periodic Snapshot | Daily aggregated flight booking per airline |
+| fact_daily_hotel_bookings | Periodic Snapshot | Daily aggregated hotel booking per hotel |
 
 ---
 
